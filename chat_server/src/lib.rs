@@ -1,12 +1,15 @@
 mod config;
 mod error;
 mod handlers;
+mod middlewares;
 mod models;
 mod utils;
 
+use axum::middleware::from_fn_with_state;
 use axum::routing::{get, patch, post};
 use axum::Router;
 use core::fmt;
+use middlewares::{set_layer, verify_token};
 use sqlx::PgPool;
 
 use std::ops::Deref;
@@ -35,8 +38,7 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
     let state = AppState::try_new(config).await?;
 
     let api = Router::new()
-        .route("/signin", post(signin_handler))
-        .route("/signup", post(signup_handler))
+        .with_state(state.clone())
         .route("/chat", get(list_chat_handler).post(create_chat_handler))
         .route(
             "/chat/:id",
@@ -46,12 +48,16 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
             "/chat/:id/messages",
             get(list_msg_handler).post(sned_msg_handler),
         )
-        .with_state(state.clone());
+        .layer(from_fn_with_state(state.clone(), verify_token))
+        .route("/signin", post(signin_handler))
+        .route("/signup", post(signup_handler));
 
-    Ok(Router::new()
+    let router = Router::new()
         .route("/", get(index_handler))
         .nest("/api", api)
-        .with_state(state))
+        .with_state(state);
+
+    Ok(set_layer(router))
 }
 
 // state.config => state.inner.config
