@@ -5,6 +5,20 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct CreateUser {
+    pub email: String,
+    pub password: String,
+    pub fullname: String,
+}
+
+#[derive(Deserialize)]
+pub struct SignInUser {
+    pub email: String,
+    pub password: String,
+}
 
 impl User {
     pub async fn find_by_email(email: &str, pool: &sqlx::PgPool) -> Result<Option<Self>, AppError> {
@@ -20,13 +34,13 @@ impl User {
         Ok(user)
     }
 
-    pub async fn create(
-        email: &str,
-        password: &str,
-        fullname: &str,
-        pool: &sqlx::PgPool,
-    ) -> Result<Self, AppError> {
-        let password_hash = hash_password(password)?;
+    pub async fn create(input: CreateUser, pool: &sqlx::PgPool) -> Result<Self, AppError> {
+        let password_hash = hash_password(&input.password)?;
+        // check if email already exists
+        let user = User::find_by_email(&input.email, pool).await?;
+        if user.is_some() {
+            return Err(AppError::EmailAlreadyExists(input.email));
+        }
 
         let user = sqlx::query_as(
             r#"
@@ -35,20 +49,18 @@ impl User {
             RETURNING id, fullname, email, created_at
             "#,
         )
-        .bind(email)
+        .bind(&input.email)
         .bind(password_hash)
-        .bind(fullname)
+        .bind(&input.fullname)
         .fetch_one(pool)
         .await?;
 
         Ok(user)
     }
 
-    pub async fn verify(
-        email: &str,
-        password: &str,
-        pool: &sqlx::PgPool,
-    ) -> Result<Option<Self>, AppError> {
+    pub async fn verify(input: SignInUser, pool: &sqlx::PgPool) -> Result<Option<Self>, AppError> {
+        let email = &input.email;
+        let password = &input.password;
         let user: Option<User> = sqlx::query_as(
             r#"
             SELECT id, fullname, email, created_at, password_hash FROM users WHERE email = $1
@@ -100,6 +112,17 @@ fn verify_password(password: &str, parsed_hash: &str) -> Result<bool, AppError> 
 }
 
 #[cfg(test)]
+impl CreateUser {
+    pub fn new(fullname: &str, email: &str, password: &str) -> Self {
+        Self {
+            email: email.to_string(),
+            password: password.to_string(),
+            fullname: fullname.to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use sqlx_db_tester::TestPg;
 
@@ -133,8 +156,8 @@ mod tests {
         let email = "wrxx@gmail.com";
         let password = "password";
         let fullname = "wrxx";
-
-        let user = User::create(email, password, fullname, &pool).await?;
+        let input = CreateUser::new(fullname, email, password);
+        let user = User::create(input, &pool).await?;
 
         assert_eq!(user.email, email);
         assert_eq!(user.fullname, fullname);
@@ -146,7 +169,11 @@ mod tests {
         assert_eq!(user.email, email);
         assert_eq!(user.fullname, fullname);
 
-        let user = User::verify(email, password, &pool).await?;
+        let input = SignInUser {
+            email: email.to_string(),
+            password: password.to_string(),
+        };
+        let user = User::verify(input, &pool).await?;
         assert!(user.is_some());
 
         Ok(())
