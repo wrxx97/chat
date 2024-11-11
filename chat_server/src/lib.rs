@@ -102,7 +102,8 @@ impl AppState {
         let config = AppConfig::load()?;
         let dk = DecodingKey::load_pem(&config.auth.sk).expect("load pk failed");
         let ek = EncodingKey::load_pem(&config.auth.pk).expect("load sk failed");
-        let server_url = config.server.db_url.clone();
+        let post = config.server.db_url.rfind('/').expect("invalid db_url");
+        let server_url = &config.server.db_url[..post];
 
         let tdb = sqlx_db_tester::TestPg::new(
             server_url.to_string(),

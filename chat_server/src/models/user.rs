@@ -124,7 +124,7 @@ impl CreateUser {
 
 #[cfg(test)]
 mod tests {
-    use sqlx_db_tester::TestPg;
+    use crate::AppState;
 
     use super::*;
 
@@ -146,10 +146,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_user_create_find_verify() -> Result<(), AppError> {
-        let tdb = TestPg::new(
-            "postgres://postgres:101350@localhost:5432".to_string(),
-            std::path::Path::new("../migrations"),
-        );
+        let (tdb, _state) = AppState::new_for_test().await?;
+
         let pool = tdb.get_pool().await;
         // do something with the pool
 
