@@ -15,7 +15,7 @@ pub(crate) async fn signup_handler(
     State(state): State<AppState>,
     Json(input): Json<CreateUser>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::create(input, &state.pg_pool).await?;
+    let user = User::create(&input, &state.pg_pool).await?;
     let token = state.ek.sign(user)?;
     let body = Json(AuthOutput { token });
     Ok((StatusCode::CREATED, body))
@@ -50,7 +50,7 @@ mod tests {
     #[tokio::test]
     async fn signup_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
-        let input = CreateUser::new("Tian Chen", "tyr@acme.org", "123456");
+        let input = CreateUser::new("default", "Tian Chen", "tyr@acme.org", "123456");
         let ret = signup_handler(State(state), Json(input))
             .await?
             .into_response();
@@ -68,7 +68,7 @@ mod tests {
         let fullname = "wrxx";
         let password = "wrxx";
 
-        let input = CreateUser::new(fullname, email, password);
+        let input = CreateUser::new("default", fullname, email, password);
         let ret = signup_handler(State(state.clone()), Json(input))
             .await?
             .into_response();

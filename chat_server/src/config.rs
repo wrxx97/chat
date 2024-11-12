@@ -1,7 +1,7 @@
 use anyhow::Result;
 use serde::Deserialize;
 use serde_yaml::from_reader;
-use std::fs;
+use std::{fs, path::PathBuf};
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
@@ -20,6 +20,7 @@ pub struct ServerConfig {
     pub host: String,
     pub port: u16,
     pub db_url: String,
+    pub base_dir: PathBuf,
 }
 
 impl AppConfig {

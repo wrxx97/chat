@@ -1,4 +1,6 @@
-use axum::{body::Body, http::status, response::IntoResponse, Json};
+use axum::{
+    body::Body, extract::multipart::MultipartError, http::status, response::IntoResponse, Json,
+};
 use jwt_simple::reexports::serde_json::json;
 use thiserror::Error;
 
@@ -15,6 +17,21 @@ pub enum AppError {
 
     #[error("email already exists: {0}")]
     EmailAlreadyExists(String),
+
+    #[error("create chat error: {0}")]
+    CreateChatError(String),
+
+    #[error("update chat error: {0}")]
+    UpdateChatError(String),
+
+    #[error("upload error: {0}")]
+    UploadError(#[from] MultipartError),
+
+    #[error("std error: {0}")]
+    StdError(#[from] std::io::Error),
+
+    #[error("not found: {0}")]
+    NotFound(String),
 }
 
 impl IntoResponse for AppError {
@@ -24,6 +41,11 @@ impl IntoResponse for AppError {
             AppError::Argon2Error(_) => status::StatusCode::UNPROCESSABLE_ENTITY,
             AppError::JwtError(_) => status::StatusCode::FORBIDDEN,
             AppError::EmailAlreadyExists(_) => status::StatusCode::CONFLICT,
+            AppError::CreateChatError(_) => status::StatusCode::BAD_REQUEST,
+            AppError::UpdateChatError(_) => status::StatusCode::BAD_REQUEST,
+            AppError::UploadError(_) => status::StatusCode::BAD_REQUEST,
+            AppError::StdError(_) => status::StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::NotFound(_) => status::StatusCode::NOT_FOUND,
         };
 
         (

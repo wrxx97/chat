@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     fullname VARCHAR(64) NOT NULL,
-    email VARCHAR(64) NOT NULL UNIQUE,
+    email VARCHAR(64) NOT NULL,
     -- hashed argon2 password
     password_hash VARCHAR(97) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -15,7 +15,7 @@ CREATE TYPE chat_type AS ENUM ('single', 'group', 'private_channel', 'public_cha
 -- create chat table
 CREATE TABLE IF NOT EXISTS chats (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(32) NOT NULL,
+    name VARCHAR(32),
     type chat_type NOT NULL,
     -- user id list for group chat
     members BIGINT[] NOT NULL,
