@@ -33,9 +33,7 @@ struct ChatUpdater {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatMessageCreated {
-    #[serde(flatten)]
     message: Message,
-    #[serde(flatten)]
     chat: Chat,
 }
 
@@ -49,7 +47,13 @@ pub async fn setup_pg_listener(state: AppState) -> Result<()> {
     tokio::spawn(async move {
         while let Some(Ok(notif)) = stream.next().await {
             info!("Received notification: {:?}", notif);
-            let notification = Notification::load(notif.channel(), notif.payload())?;
+            let notification = match Notification::load(notif.channel(), notif.payload()) {
+                Ok(notification) => notification,
+                Err(e) => {
+                    warn!("load notification failed: {}", e);
+                    continue;
+                }
+            };
             let users = &state.users;
             for user_id in &notification.user_ids {
                 if let Some(tx) = users.get(user_id) {
@@ -84,6 +88,7 @@ impl Notification {
             }
             "chat_message_created" => {
                 let message: ChatMessageCreated = serde_json::from_str(payload)?;
+                println!("message: {:?}", &message);
                 let user_ids = message.chat.members.iter().cloned().collect();
                 Ok(Self {
                     user_ids,

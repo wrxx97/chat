@@ -65,7 +65,6 @@ pub struct Message {
     pub chat_id: i64,
     pub sender_id: i64,
     pub content: String,
-    pub files: Vec<String>,
     pub created_at: DateTime<Utc>,
 }
 

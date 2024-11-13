@@ -8,14 +8,25 @@ use chat_core::User;
 use tokio::fs;
 use tracing::warn;
 
-use crate::{models::ChatFile, AppError, AppState};
+use crate::{
+    models::{ChatFile, CreateMessage},
+    AppError, AppState,
+};
 
-pub(crate) async fn send_msg_handler() -> impl IntoResponse {
-    (StatusCode::OK, "send messages")
+pub(crate) async fn send_msg_handler(
+    State(state): State<AppState>,
+    Json(input): Json<CreateMessage>,
+) -> Result<impl IntoResponse, AppError> {
+    let msg = state.create_message(&input).await?;
+    Ok((StatusCode::OK, Json(msg)))
 }
 
-pub(crate) async fn list_msg_handler() -> impl IntoResponse {
-    (StatusCode::OK, "List messages")
+pub(crate) async fn list_msg_handler(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> Result<impl IntoResponse, AppError> {
+    let msgs = state.fetch_messages(id).await?;
+    Ok((StatusCode::OK, Json(msgs)))
 }
 
 pub(crate) async fn upload_file_handler(
