@@ -362,6 +362,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chat_core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "axum-extra",
+ "chrono",
+ "jwt-simple",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "chat_server"
 version = "0.1.0"
 dependencies = [
@@ -369,6 +389,7 @@ dependencies = [
  "argon2",
  "axum",
  "axum-extra",
+ "chat_core",
  "chrono",
  "hex-literal",
  "http-body-util",
@@ -386,7 +407,6 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -1508,6 +1528,7 @@ dependencies = [
  "anyhow",
  "axum",
  "axum-extra",
+ "chat_core",
  "futures",
  "serde",
  "serde_yaml",

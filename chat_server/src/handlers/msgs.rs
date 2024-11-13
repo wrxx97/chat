@@ -4,10 +4,11 @@ use axum::{
     response::IntoResponse,
     Extension, Json,
 };
+use chat_core::User;
 use tokio::fs;
 use tracing::warn;
 
-use crate::{models::ChatFile, AppError, AppState, User};
+use crate::{models::ChatFile, AppError, AppState};
 
 pub(crate) async fn send_msg_handler() -> impl IntoResponse {
     (StatusCode::OK, "send messages")

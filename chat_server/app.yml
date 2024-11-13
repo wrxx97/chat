@@ -5,10 +5,10 @@ server:
   base_dir: /tmp/chat_server
 auth:
   pk: |
-    -----BEGIN PRIVATE KEY-----
-    MC4CAQAwBQYDK2VwBCIEIDnxJGEJGoW+mNKHn4vRY1V6BQ3MglSQSuZ8featmyC4
-    -----END PRIVATE KEY-----
-  sk: |
     -----BEGIN PUBLIC KEY-----
     MCowBQYDK2VwAyEAfM+lwNHj6TRJ3EGP38lIJcOo9Dlt2u2JzcwWMbu7jQY=
     -----END PUBLIC KEY-----
+  sk: |
+    -----BEGIN PRIVATE KEY-----
+    MC4CAQAwBQYDK2VwBCIEIDnxJGEJGoW+mNKHn4vRY1V6BQ3MglSQSuZ8featmyC4
+    -----END PRIVATE KEY-----

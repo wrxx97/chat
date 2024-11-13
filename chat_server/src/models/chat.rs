@@ -1,9 +1,8 @@
+use chat_core::{Chat, ChatType, ChatUser};
 use serde::{Deserialize, Serialize};
-use sqlx::{prelude::FromRow, PgPool};
+use sqlx::prelude::FromRow;
 
-use crate::AppError;
-
-use super::{Chat, ChatType, ChatUser};
+use crate::{AppError, AppState};
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, Default)]
 pub struct CreateChat {
@@ -20,7 +19,7 @@ pub struct UpdateChat {
 }
 
 #[allow(unused)]
-impl Chat {
+impl AppState {
     fn get_name_from_members(members: Vec<ChatUser>) -> String {
         members
             .into_iter()
@@ -28,8 +27,8 @@ impl Chat {
             .collect::<Vec<_>>()
             .join(",")
     }
-    pub async fn create(input: CreateChat, ws_id: i64, pool: &PgPool) -> Result<Self, AppError> {
-        let users = ChatUser::fetch_by_ids(&input.members, pool).await?;
+    pub async fn create_chat(&self, input: CreateChat, ws_id: i64) -> Result<Chat, AppError> {
+        let users = self.fetch_chat_user_by_ids(&input.members).await?;
         let len = users.len();
 
         let chat_type = match (&input.name, len) {
@@ -54,7 +53,7 @@ impl Chat {
             }
         };
 
-        let chat: Self = sqlx::query_as(
+        let chat = sqlx::query_as(
             r#"
             INSERT INTO chats (ws_id, name, type, members)
             VALUES ($1, $2, $3, $4)
@@ -65,13 +64,13 @@ impl Chat {
         .bind(input.name)
         .bind(chat_type)
         .bind(&input.members)
-        .fetch_one(pool)
+        .fetch_one(&self.pg_pool)
         .await?;
 
         Ok(chat)
     }
 
-    pub async fn fetch_all(ws_id: i64, pool: &PgPool) -> Result<Vec<Self>, AppError> {
+    pub async fn fetch_chats(&self, ws_id: i64) -> Result<Vec<Chat>, AppError> {
         let chats = sqlx::query_as(
             r#"
             SELECT * FROM chats
@@ -79,14 +78,14 @@ impl Chat {
             "#,
         )
         .bind(ws_id)
-        .fetch_all(pool)
+        .fetch_all(&self.pg_pool)
         .await?;
 
         Ok(chats)
     }
 
-    pub async fn update_by_id(id: i64, input: UpdateChat, pool: &PgPool) -> Result<Self, AppError> {
-        let chat: Self = sqlx::query_as(
+    pub async fn update_chat_by_id(&self, id: i64, input: UpdateChat) -> Result<Chat, AppError> {
+        let chat = sqlx::query_as(
             r#"
             UPDATE chats
             SET name = $1, members = $2, public = $3
@@ -98,13 +97,13 @@ impl Chat {
         .bind(input.members)
         .bind(input.public)
         .bind(id)
-        .fetch_one(pool)
+        .fetch_one(&self.pg_pool)
         .await?;
 
         Ok(chat)
     }
 
-    pub async fn delete_by_id(id: i64, pool: &PgPool) -> Result<(), AppError> {
+    pub async fn delete_chat_by_id(&self, id: i64) -> Result<(), AppError> {
         sqlx::query(
             r#"
             DELETE FROM chats
@@ -112,7 +111,7 @@ impl Chat {
             "#,
         )
         .bind(id)
-        .execute(pool)
+        .execute(&self.pg_pool)
         .await?;
 
         Ok(())
@@ -138,14 +137,14 @@ impl CreateChat {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::get_test_pool;
 
     #[tokio::test]
     async fn create_should_work() {
-        let (_tdb, pool) = get_test_pool(None).await;
+        let (_tdb, state) = AppState::new_for_test().await.unwrap();
 
         let input = CreateChat::new("", &[1, 2], false);
-        let chat = Chat::create(input, 1, &pool)
+        let chat = state
+            .create_chat(input, 1)
             .await
             .expect("chat create failed");
         assert_eq!(chat.members.len(), 2);
@@ -154,10 +153,8 @@ mod tests {
 
     #[tokio::test]
     async fn fetch_all_should_work() {
-        let (_tdb, pool) = get_test_pool(None).await;
-        let chats = Chat::fetch_all(1, &pool)
-            .await
-            .expect("fetch all chats failed");
+        let (_tdb, state) = AppState::new_for_test().await.unwrap();
+        let chats = state.fetch_chats(1).await.expect("fetch all chats failed");
 
         assert_eq!(chats.len(), 4);
     }

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     models::{CreateUser, SignInUser},
-    AppError, AppState, User,
+    AppError, AppState,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,7 +15,7 @@ pub(crate) async fn signup_handler(
     State(state): State<AppState>,
     Json(input): Json<CreateUser>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::create(&input, &state.pg_pool).await?;
+    let user = state.create_user(&input).await?;
     let token = state.ek.sign(user)?;
     let body = Json(AuthOutput { token });
     Ok((StatusCode::CREATED, body))
@@ -25,7 +25,7 @@ pub(crate) async fn signin_handler(
     State(state): State<AppState>,
     Json(input): Json<SignInUser>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = User::verify(input, &state.pg_pool).await?;
+    let user = state.verify(input).await?;
 
     match user {
         Some(user) => {
@@ -50,7 +50,7 @@ mod tests {
     #[tokio::test]
     async fn signup_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
-        let input = CreateUser::new("default", "Tian Chen", "tyr@acme.org", "123456");
+        let input = CreateUser::new("acme", "Tian Chen", "tyr@acme.org", "123456");
         let ret = signup_handler(State(state), Json(input))
             .await?
             .into_response();
@@ -64,7 +64,7 @@ mod tests {
     #[tokio::test]
     async fn signin_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
-        let email = "wrxx@qq.com";
+        let email = "test@qq.com";
         let fullname = "wrxx";
         let password = "wrxx";
 
