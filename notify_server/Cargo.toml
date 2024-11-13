@@ -11,10 +11,13 @@ axum-extra = { workspace = true }
 futures = "0.3.31"
 serde = { workspace = true }
 serde_yaml = { workspace = true }
+serde_json = { workspace = true }
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-tokio-stream = "0.1.16"
+tokio-stream = { version = "0.1.16", features = ["sync"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 chat_core = { workspace = true }
+jwt-simple = { workspace = true }
+dashmap = "6.1.0"

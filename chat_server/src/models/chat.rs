@@ -1,6 +1,7 @@
 use chat_core::{Chat, ChatType, ChatUser};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
+use tracing::info;
 
 use crate::{AppError, AppState};
 
@@ -52,6 +53,11 @@ impl AppState {
                 }
             }
         };
+
+        info!("chat_type: {:?}", chat_type);
+        info!("members: {:?}", input.members);
+        info!("ws_id: {:?}", ws_id);
+        info!("name: {:?}", input.name);
 
         let chat = sqlx::query_as(
             r#"

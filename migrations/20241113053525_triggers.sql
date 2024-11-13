@@ -21,10 +21,19 @@ EXECUTE FUNCTION add_to_chat();
 -- if message is added to chat, notify with message data
 CREATE OR REPLACE FUNCTION add_to_message()
 RETURNS TRIGGER AS $$
+DECLARE
+    chat_record RECORD;
 BEGIN
-    RAISE NOTICE 'add_to_message: %', NEW;
     IF TG_OP = 'INSERT' THEN
-        PERFORM pg_notify('message_updated', row_to_json(NEW)::TEXT);
+      SELECT * INTO chat_record FROM chats WHERE id = NEW.chat_id;
+      RAISE NOTICE 'add_to_message: %', NEW;
+        PERFORM pg_notify(
+            'chat_message_created',
+            json_build_object(
+              'message', NEW,
+              'chat', chat_record
+            )::TEXT
+        );
     END IF;
     RETURN NEW;
 END;
