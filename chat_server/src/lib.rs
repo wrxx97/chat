@@ -105,7 +105,6 @@ impl TokenVerify for AppState {
 }
 
 #[cfg(test)]
-
 mod test_util {
     use super::*;
     use sqlx::{Executor, PgPool};
