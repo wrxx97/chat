@@ -32,11 +32,7 @@ pub(crate) async fn signin_handler(
             let token = state.ek.sign(user)?;
             Ok((StatusCode::OK, Json(AuthOutput { token })).into_response())
         }
-        None => Ok((
-            StatusCode::FORBIDDEN,
-            "Invalid email or password".to_string(),
-        )
-            .into_response()),
+        None => Err(AppError::NotFound("user not found".to_string())),
     }
 }
 

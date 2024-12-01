@@ -12,6 +12,7 @@ use server_time::SeverTimeLayer;
 use axum::Router;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer};
 use tower_http::LatencyUnit;
 use tracing::Level;
@@ -22,7 +23,12 @@ pub const REQUEST_ID_HEADER: &str = "x-request-id";
 pub const SERVER_TIME_HEADER: &str = "x-server-time";
 
 pub fn set_layer(router: Router) -> Router {
-    router.layer(
+    let cors = CorsLayer::new()
+        .allow_origin(Any) // 允许所有来源（或指定具体来源）
+        .allow_methods(Any) // 允许所有方法（GET、POST 等）
+        .allow_headers(Any); // 允许所有请求头
+
+    router.layer(cors).layer(
         ServiceBuilder::new()
             .layer(
                 TraceLayer::new_for_http()
