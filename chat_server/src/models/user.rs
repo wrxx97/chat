@@ -37,6 +37,21 @@ impl AppState {
         Ok(user)
     }
 
+    pub async fn fetch_all_users(&self, ws_id: i32) -> Result<Vec<User>, AppError> {
+        let users = sqlx::query_as(
+            r#"
+            SELECT *
+            FROM users
+            WHERE ws_id = $1
+            "#,
+        )
+        .bind(ws_id)
+        .fetch_all(&self.pg_pool)
+        .await?;
+
+        Ok(users)
+    }
+
     /// Create a new user
     // TODO: use transaction for workspace creation and user creation
     pub async fn create_user(&self, input: &CreateUser) -> Result<User, AppError> {

@@ -1,7 +1,6 @@
 mod config;
 mod error;
 mod handlers;
-mod middlewares;
 mod models;
 
 use axum::middleware::from_fn_with_state;
@@ -49,6 +48,7 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
         )
         .route("/files/upload", post(upload_file_handler))
         .route("/files/:ws_id/*path", get(download_file_handler))
+        .route("/users/:ws_id", get(get_user_list_handler))
         .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
         .route("/signin", post(signin_handler))
         .route("/signup", post(signup_handler));
